@@ -25,13 +25,13 @@ public class SegrepassScraperService {
     private static final String SEGREPASS_URL = "https://www.segrepass1.unina.it/Welcome.do";
     private static final Duration WAIT_TIMEOUT = Duration.ofSeconds(15);
 
-    @Value("${segrepass.username:}")
+    /*@Value("${segrepass.username:}")
     private String username;
 
     @Value("${segrepass.password:}")
-    private String password;
+    private String password;*/
 
-    public List<ExamDto> fetchExams() {
+    /*public List<ExamDto> fetchExams() {
         WebDriver driver = null;
 
         try {
@@ -58,7 +58,36 @@ public class SegrepassScraperService {
                 }
             }
         }
+    }*/
+    public List<ExamDto> fetchExams(String username, String password) {
+        WebDriver driver = null;
+
+        try {
+            driver = setupDriver();
+            logger.info("Driver avviato, navigazione a {}", SEGREPASS_URL);
+
+            driver.get(SEGREPASS_URL);
+            login(driver, username, password);
+            navigateToEsamiSostenuti(driver);
+
+            List<ExamDto> exams = parseExams(driver);
+            logger.info("Estratti {} esami", exams.size());
+            return exams;
+        } catch (Exception e) {
+            logger.error("Errore durante scraping: {}", e.getMessage(), e);
+            throw new RuntimeException("Scraping fallito: " + e.getMessage(), e);
+        } finally {
+            if (driver != null) {
+                try {
+                    driver.quit();
+                    logger.info("Driver chiuso");
+                } catch (Exception e) {
+                    logger.warn("Errore chiusura driver: {}", e.getMessage());
+                }
+            }
+        }
     }
+
 
     private WebDriver setupDriver() {
         logger.info("Setup ChromeDriver");
@@ -79,7 +108,7 @@ public class SegrepassScraperService {
         return new ChromeDriver(options);
     }
 
-    private void login(WebDriver driver) {
+    /*private void login(WebDriver driver) {
         logger.info("Inizio login");
         WebDriverWait wait = new WebDriverWait(driver, WAIT_TIMEOUT);
 
@@ -108,7 +137,37 @@ public class SegrepassScraperService {
             logger.error("Login fallito: {}", e.getMessage(), e);
             throw new RuntimeException("Autenticazione fallita", e);
         }
+    }*/
+    private void login(WebDriver driver, String username, String password) {
+        logger.info("Inizio login");
+        WebDriverWait wait = new WebDriverWait(driver, WAIT_TIMEOUT);
+
+        try {
+            WebElement usernameField = wait.until(
+                    ExpectedConditions.presenceOfElementLocated(By.name("codice_fiscale"))
+            );
+            usernameField.clear();
+            usernameField.sendKeys(username);
+
+            WebElement passwordField = wait.until(
+                    ExpectedConditions.presenceOfElementLocated(By.name("password"))
+            );
+            passwordField.clear();
+            passwordField.sendKeys(password);
+
+            WebElement loginButton = wait.until(
+                    ExpectedConditions.elementToBeClickable(By.id("cfSubmit"))
+            );
+            loginButton.click();
+
+            wait.until(ExpectedConditions.presenceOfElementLocated(By.id("link_1")));
+            logger.info("Login completato");
+        } catch (Exception e) {
+            logger.error("Login fallito: {}", e.getMessage(), e);
+            throw new RuntimeException("Autenticazione fallita", e);
+        }
     }
+
 
     private void navigateToEsamiSostenuti(WebDriver driver) {
         logger.info("Navigazione: Dati Carriera -> Esami Sostenuti");
