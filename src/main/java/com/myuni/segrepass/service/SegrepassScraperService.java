@@ -90,12 +90,12 @@ public class SegrepassScraperService {
         try {
             // Aspetta il campo username
             WebElement usernameField = wait.until(
-                    ExpectedConditions.presenceOfElementLocated(By.id("Utente"))
+                    ExpectedConditions.presenceOfElementLocated(By.id("Codice Fiscale:"))
             );
             usernameField.sendKeys(username);
 
             // Trova password
-            WebElement passwordField = driver.findElement(By.id("Password"));
+            WebElement passwordField = driver.findElement(By.id("Password:"));
             passwordField.sendKeys(password);
 
             // Submit login
