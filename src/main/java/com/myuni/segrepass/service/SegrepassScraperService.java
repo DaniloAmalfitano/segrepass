@@ -32,7 +32,6 @@ public class SegrepassScraperService {
     private String password;
 
     public List<ExamDto> fetchExams() {
-        List<ExamDto> exams = new ArrayList<>();
         WebDriver driver = null;
 
         try {
@@ -41,11 +40,11 @@ public class SegrepassScraperService {
 
             driver.get(SEGREPASS_URL);
             login(driver);
-
             navigateToEsamiSostenuti(driver);
-            exams = parseExams(driver);
 
+            List<ExamDto> exams = parseExams(driver);
             logger.info("Estratti {} esami", exams.size());
+            return exams;
         } catch (Exception e) {
             logger.error("Errore durante scraping: {}", e.getMessage(), e);
             throw new RuntimeException("Scraping fallito: " + e.getMessage(), e);
@@ -59,8 +58,6 @@ public class SegrepassScraperService {
                 }
             }
         }
-
-        return exams;
     }
 
     private WebDriver setupDriver() {
@@ -81,7 +78,6 @@ public class SegrepassScraperService {
 
         return new ChromeDriver(options);
     }
-
 
     private void login(WebDriver driver) {
         logger.info("Inizio login");
@@ -105,8 +101,7 @@ public class SegrepassScraperService {
             );
             loginButton.click();
 
-            // Aspetta che compaia il menu post-login
-            wait.until(ExpectedConditions.presenceOfElementLocated(By.id("link_1")));
+            wait.until(ExpectedConditions.presenceOfElementLocated(By.id("login_successful")));
 
             logger.info("Login completato");
         } catch (Exception e) {
@@ -121,7 +116,7 @@ public class SegrepassScraperService {
 
         try {
             WebElement datiCarriera = wait.until(
-                    ExpectedConditions.elementToBeClickable(By.id("link_1"))
+                    ExpectedConditions.elementToBeClickable(By.id("login_successful"))
             );
             datiCarriera.click();
             logger.info("Cliccato su Dati Carriera");
@@ -149,7 +144,6 @@ public class SegrepassScraperService {
         logger.info("Parsing esami");
 
         try {
-            // Righe reali della tabella esami
             List<WebElement> rows = driver.findElements(By.xpath("//tbody/tr"));
             logger.info("Trovate {} righe", rows.size());
 
@@ -160,8 +154,6 @@ public class SegrepassScraperService {
                         continue;
                     }
 
-                    // HTML reale:
-                    // td[1]=codice, td[2]=nome esame, td[3]=voto, td[4]=cfu, td[5]=data
                     String courseCode = cells.get(0).getText().trim();
                     String courseName = cells.get(1).getText().trim();
                     String grade = cells.get(2).getText().trim();
