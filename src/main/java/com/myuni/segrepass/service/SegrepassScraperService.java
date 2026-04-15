@@ -149,26 +149,35 @@ public class SegrepassScraperService {
         logger.info("Parsing esami");
 
         try {
-            // Selettore della tabella esami (adattare al sito reale)
-            List<WebElement> rows = driver.findElements(By.xpath("//table[@id='exams-table']//tbody/tr"));
+            // Righe reali della tabella esami
+            List<WebElement> rows = driver.findElements(By.xpath("//tbody/tr"));
             logger.info("Trovate {} righe", rows.size());
 
             for (WebElement row : rows) {
                 try {
-                    String courseName = row.findElement(By.xpath("./td[1]")).getText();
-                    String cfu = row.findElement(By.xpath("./td[2]")).getText();
-                    String grade = row.findElement(By.xpath("./td[3]")).getText();
-                    String date = row.findElement(By.xpath("./td[4]")).getText();
+                    List<WebElement> cells = row.findElements(By.tagName("td"));
+                    if (cells.size() < 5) {
+                        continue;
+                    }
 
-                    ExamDto exam = new ExamDto(courseName, cfu, grade, date);
-                    exams.add(exam);
-                    logger.debug("Esame estratto: {}", exam);
+                    // HTML reale:
+                    // td[1]=codice, td[2]=nome esame, td[3]=voto, td[4]=cfu, td[5]=data
+                    String courseName = cells.get(1).getText().trim();
+                    String grade = cells.get(2).getText().trim();
+                    String cfu = cells.get(3).getText().trim();
+                    String date = cells.get(4).getText().trim();
+
+                    if (courseName.isEmpty()) {
+                        continue;
+                    }
+
+                    exams.add(new ExamDto(courseName, cfu, grade, date));
                 } catch (Exception e) {
                     logger.warn("Errore parsing riga: {}", e.getMessage());
                 }
             }
         } catch (Exception e) {
-            logger.error("Errore parsing tabella esami: {}", e.getMessage());
+            logger.error("Errore parsing tabella esami: {}", e.getMessage(), e);
         }
 
         return exams;
