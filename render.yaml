@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: segrepass-scraper
+    runtime: docker
+    region: eu
+    plan: free
+
+    # Variabili d'ambiente (le credenziali le aggiungerai nel pannello Render)
+    envVars:
+      - key: SEGREPASS_USERNAME
+        sync: false
+      - key: SEGREPASS_PASSWORD
+        sync: false
+      - key: PORT
+        value: "8080"
