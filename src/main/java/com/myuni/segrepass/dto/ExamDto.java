@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ExamDto {
+    private String courseCode;
     private String courseName;
     private String cfu;
     private String grade;

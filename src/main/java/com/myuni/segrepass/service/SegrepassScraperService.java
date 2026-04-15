@@ -162,6 +162,7 @@ public class SegrepassScraperService {
 
                     // HTML reale:
                     // td[1]=codice, td[2]=nome esame, td[3]=voto, td[4]=cfu, td[5]=data
+                    String courseCode = cells.get(0).getText().trim();
                     String courseName = cells.get(1).getText().trim();
                     String grade = cells.get(2).getText().trim();
                     String cfu = cells.get(3).getText().trim();
@@ -171,7 +172,7 @@ public class SegrepassScraperService {
                         continue;
                     }
 
-                    exams.add(new ExamDto(courseName, cfu, grade, date));
+                    exams.add(new ExamDto(courseCode,courseName, cfu, grade, date));
                 } catch (Exception e) {
                     logger.warn("Errore parsing riga: {}", e.getMessage());
                 }
