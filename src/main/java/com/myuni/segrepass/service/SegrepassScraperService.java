@@ -22,7 +22,7 @@ import java.util.List;
 @Service
 public class SegrepassScraperService {
     private static final Logger logger = LoggerFactory.getLogger(SegrepassScraperService.class);
-    private static final String SEGREPASS_URL = "https://segrepass.unige.it";
+    private static final String SEGREPASS_URL = "https://www.segrepass1.unina.it/Welcome.do";
     private static final Duration WAIT_TIMEOUT = Duration.ofSeconds(15);
 
     @Value("${segrepass.username:}")
@@ -42,7 +42,7 @@ public class SegrepassScraperService {
             driver.get(SEGREPASS_URL);
             login(driver);
 
-            navigateToLibretto(driver);
+            navigateToEsamiSostenuti(driver);
             exams = parseExams(driver);
 
             logger.info("Estratti {} esami", exams.size());
@@ -111,24 +111,32 @@ public class SegrepassScraperService {
         }
     }
 
-    private void navigateToLibretto(WebDriver driver) {
-        logger.info("Navigazione a libretto");
+    private void navigateToEsamiSostenuti(WebDriver driver) {
+        logger.info("Navigazione: Dati carriera -> Esami sostenuti");
         WebDriverWait wait = new WebDriverWait(driver, WAIT_TIMEOUT);
 
-        try {
-            // Clicca su link libretto (adattare al sito reale)
-            WebElement libreButton = wait.until(
-                    ExpectedConditions.elementToBeClickable(By.xpath("//a[contains(text(), 'Libretto')]"))
-            );
-            libreButton.click();
+        // 1) Menu "Dati carriera"
+        WebElement datiCarriera = wait.until(
+                ExpectedConditions.elementToBeClickable(
+                        By.xpath("//a[contains(normalize-space(.), 'Dati carriera')]")
+                )
+        );
+        datiCarriera.click();
 
-            // Aspetta caricamento della tabella esami
-            wait.until(ExpectedConditions.presenceOfElementLocated(By.id("exams-table")));
-            logger.info("Libretto caricato");
-        } catch (Exception e) {
-            logger.warn("Navigazione libretto fallita (potrebbe non esistere): {}", e.getMessage());
-        }
+        // 2) Voce "Esami sostenuti"
+        WebElement esamiSostenuti = wait.until(
+                ExpectedConditions.elementToBeClickable(
+                        By.xpath("//a[contains(normalize-space(.), 'Esami sostenuti')]")
+                )
+        );
+        esamiSostenuti.click();
+
+        // 3) Attendi pagina/tabella esami (selettore da adattare al DOM reale)
+        wait.until(ExpectedConditions.presenceOfElementLocated(
+                By.xpath("//table[contains(@class,'table') or @id='exams-table']")
+        ));
     }
+
 
     private List<ExamDto> parseExams(WebDriver driver) {
         List<ExamDto> exams = new ArrayList<>();
