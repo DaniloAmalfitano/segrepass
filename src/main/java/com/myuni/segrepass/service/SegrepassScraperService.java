@@ -88,25 +88,29 @@ public class SegrepassScraperService {
         WebDriverWait wait = new WebDriverWait(driver, WAIT_TIMEOUT);
 
         try {
-            // Aspetta il campo username
             WebElement usernameField = wait.until(
-                    ExpectedConditions.presenceOfElementLocated(By.id("Codice Fiscale:"))
+                    ExpectedConditions.presenceOfElementLocated(By.name("codice_fiscale"))
             );
             usernameField.sendKeys(username);
 
-            // Trova password
-            WebElement passwordField = driver.findElement(By.id("Password:"));
+            WebElement passwordField = wait.until(
+                    ExpectedConditions.presenceOfElementLocated(By.name("password"))
+            );
             passwordField.sendKeys(password);
 
-            // Submit login
-            WebElement loginButton = driver.findElement(By.id("login-button"));
+            WebElement loginButton = wait.until(
+                    ExpectedConditions.elementToBeClickable(By.id("cfSubmit"))
+            );
             loginButton.click();
 
-            // Aspetta redirect dopo login (verifica che dashboard sia caricata)
-            wait.until(ExpectedConditions.urlContains("/dashboard"));
+            // Aspetta un elemento della pagina dopo login
+            wait.until(ExpectedConditions.presenceOfElementLocated(
+                    By.xpath("//a[contains(normalize-space(.), 'Dati carriera')]")
+            ));
+
             logger.info("Login completato");
         } catch (Exception e) {
-            logger.error("Login fallito: {}", e.getMessage());
+            logger.error("Login fallito: {}", e.getMessage(), e);
             throw new RuntimeException("Autenticazione fallita", e);
         }
     }
