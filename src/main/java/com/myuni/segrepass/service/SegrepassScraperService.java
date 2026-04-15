@@ -91,11 +91,13 @@ public class SegrepassScraperService {
             WebElement usernameField = wait.until(
                     ExpectedConditions.presenceOfElementLocated(By.name("codice_fiscale"))
             );
+            usernameField.clear();
             usernameField.sendKeys(username);
 
             WebElement passwordField = wait.until(
                     ExpectedConditions.presenceOfElementLocated(By.name("password"))
             );
+            passwordField.clear();
             passwordField.sendKeys(password);
 
             WebElement loginButton = wait.until(
@@ -103,10 +105,8 @@ public class SegrepassScraperService {
             );
             loginButton.click();
 
-            // Aspetta un elemento della pagina dopo login
-            wait.until(ExpectedConditions.presenceOfElementLocated(
-                    By.xpath("//a[contains(normalize-space(.), 'Dati carriera')]")
-            ));
+            // Aspetta che compaia il menu post-login
+            wait.until(ExpectedConditions.presenceOfElementLocated(By.id("link_1")));
 
             logger.info("Login completato");
         } catch (Exception e) {
@@ -116,29 +116,31 @@ public class SegrepassScraperService {
     }
 
     private void navigateToEsamiSostenuti(WebDriver driver) {
-        logger.info("Navigazione: Dati carriera -> Esami sostenuti");
+        logger.info("Navigazione: Dati Carriera -> Esami Sostenuti");
         WebDriverWait wait = new WebDriverWait(driver, WAIT_TIMEOUT);
 
-        // 1) Menu "Dati carriera"
-        WebElement datiCarriera = wait.until(
-                ExpectedConditions.elementToBeClickable(
-                        By.xpath("//a[contains(normalize-space(.), 'Dati carriera')]")
-                )
-        );
-        datiCarriera.click();
+        try {
+            WebElement datiCarriera = wait.until(
+                    ExpectedConditions.elementToBeClickable(By.id("link_1"))
+            );
+            datiCarriera.click();
+            logger.info("Cliccato su Dati Carriera");
 
-        // 2) Voce "Esami sostenuti"
-        WebElement esamiSostenuti = wait.until(
-                ExpectedConditions.elementToBeClickable(
-                        By.xpath("//a[contains(normalize-space(.), 'Esami sostenuti')]")
-                )
-        );
-        esamiSostenuti.click();
+            WebElement esamiSostenuti = wait.until(
+                    ExpectedConditions.elementToBeClickable(
+                            By.cssSelector("a[href*='azione=esamiSostenuti']")
+                    )
+            );
+            esamiSostenuti.click();
+            logger.info("Cliccato su Esami Sostenuti");
 
-        // 3) Attendi pagina/tabella esami (selettore da adattare al DOM reale)
-        wait.until(ExpectedConditions.presenceOfElementLocated(
-                By.xpath("//table[contains(@class,'table') or @id='exams-table']")
-        ));
+            // Attendi che si carichi la pagina con la tabella
+            wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//table")));
+
+        } catch (Exception e) {
+            logger.error("Errore navigazione menu: {}", e.getMessage(), e);
+            throw new RuntimeException("Navigazione a Esami Sostenuti fallita", e);
+        }
     }
 
 
