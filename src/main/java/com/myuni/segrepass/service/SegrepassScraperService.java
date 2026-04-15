@@ -101,7 +101,7 @@ public class SegrepassScraperService {
             );
             loginButton.click();
 
-            wait.until(ExpectedConditions.presenceOfElementLocated(By.id("login_successful")));
+            wait.until(ExpectedConditions.presenceOfElementLocated(By.id("link_1")));
 
             logger.info("Login completato");
         } catch (Exception e) {
@@ -116,7 +116,7 @@ public class SegrepassScraperService {
 
         try {
             WebElement datiCarriera = wait.until(
-                    ExpectedConditions.elementToBeClickable(By.id("login_successful"))
+                    ExpectedConditions.elementToBeClickable(By.id("link_1"))
             );
             datiCarriera.click();
             logger.info("Cliccato su Dati Carriera");
