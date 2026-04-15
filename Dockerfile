@@ -12,6 +12,10 @@ FROM eclipse-temurin:21-jre-alpine
 # Installa Chromium e dependenze per Selenium
 RUN apk add --no-cache chromium chromium-chromedriver
 
+ENV CHROME_BIN=/usr/bin/chromium-browser
+ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver
+
+
 WORKDIR /app
 
 # Copia jar compilato

@@ -66,20 +66,22 @@ public class SegrepassScraperService {
     private WebDriver setupDriver() {
         logger.info("Setup ChromeDriver");
 
-        // Setup automatico
-        WebDriverManager.chromedriver().setup();
+        String chromeBin = System.getenv().getOrDefault("CHROME_BIN", "/usr/bin/chromium-browser");
+        String chromeDriverPath = System.getenv().getOrDefault("CHROMEDRIVER_PATH", "/usr/bin/chromedriver");
+
+        System.setProperty("webdriver.chrome.driver", chromeDriverPath);
 
         ChromeOptions options = new ChromeOptions();
+        options.setBinary(chromeBin);
         options.addArguments("--headless=new");
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
         options.addArguments("--disable-gpu");
         options.addArguments("--window-size=1920,1080");
-        options.addArguments("--disable-blink-features=AutomationControlled");
-        options.addArguments("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
 
         return new ChromeDriver(options);
     }
+
 
     private void login(WebDriver driver) {
         logger.info("Inizio login");

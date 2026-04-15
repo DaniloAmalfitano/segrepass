@@ -2,7 +2,7 @@ services:
   - type: web
     name: segrepass-scraper
     runtime: docker
-    region: eu
+    region: frankfurt
     plan: free
 
     # Variabili d'ambiente (le credenziali le aggiungerai nel pannello Render)
