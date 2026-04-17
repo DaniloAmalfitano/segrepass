@@ -1,12 +1,12 @@
 package com.myuni.segrepass.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 public class ExamDto {
     private String courseCode;
     private String courseName;
