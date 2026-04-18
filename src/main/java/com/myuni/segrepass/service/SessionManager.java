@@ -20,22 +20,22 @@ public class SessionManager {
     private static final Logger logger = LoggerFactory.getLogger(SessionManager.class);
     private final Map<String, UserSession> sessions = new ConcurrentHashMap<>();
 
-    //Timeout di 30 minuti per inattività
-    private static final long SESSION_TIMEOUT_30 = 30*60*1000;
+    // Timeout di 30 minuti per inattivita
+    private static final long SESSION_TIMEOUT_MILLIS = 30 * 60 * 1000;
 
-    //Timeout a 15 secondi per testing
-    //private static final long SESSION_TIMEOUT_30 = 15_000;
+    // Timeout a 15 secondi per testing
+    // private static final long SESSION_TIMEOUT_MILLIS = 15_000;
     @Scheduled(fixedRate = 60_000)
     public void scheduledCleanupExpiredSessions() {
         cleanupExpiredSessions();
     }
 
-    public synchronized String CreateSession(String username, WebDriver driver) {
+    public synchronized String createSession(String username, WebDriver driver) {
         for (Map.Entry<String, UserSession> entry : sessions.entrySet()) {
             UserSession existingSession = entry.getValue();
 
             if (existingSession.getUsername().equals(username)) {
-                if (!IsSessionExpired(existingSession)) {
+                if (!isSessionExpired(existingSession)) {
                     existingSession.updateLastAccessed();
                     logger.info("Utente {} già loggato, restituisco sessionId esistente: {}", username, entry.getKey());
 
@@ -44,7 +44,7 @@ public class SessionManager {
                     return entry.getKey();
                 } else {
                     logger.info("Sessione scaduta per utente {}, la chiudo e ne creo una nuova", username);
-                    CloseUserSession(entry.getKey());
+                    closeUserSession(entry.getKey());
                     break;
                 }
             }
@@ -63,9 +63,9 @@ public class SessionManager {
             logger.warn("Sessione non trovata: {}", sessionId);
             return null;
         }
-        if (IsSessionExpired(session)) {
+        if (isSessionExpired(session)) {
             logger.info("Sessione scaduta: {}", sessionId);
-            CloseUserSession(sessionId);
+            closeUserSession(sessionId);
             return null;
         }
 
@@ -73,7 +73,7 @@ public class SessionManager {
         return session;
     }
 
-    public void CloseUserSession(String sessionId) {
+    public void closeUserSession(String sessionId) {
         UserSession session = sessions.remove(sessionId);
         if (session == null) {
             logger.warn("Sessione non trovata: {}", sessionId);
@@ -100,21 +100,21 @@ public class SessionManager {
         }
     }
 
-    private boolean IsSessionExpired(UserSession session) {
+    private boolean isSessionExpired(UserSession session) {
         long elapsedTime = System.currentTimeMillis() - session.getLastAccessedAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-        return  elapsedTime >= SESSION_TIMEOUT_30;
+        return elapsedTime >= SESSION_TIMEOUT_MILLIS;
     }
 
     public void cleanupExpiredSessions() {
         List<String> expiredSessions = new ArrayList<>();
 
         sessions.forEach((sessionId, session) -> {
-            if (IsSessionExpired(session)) {
+            if (isSessionExpired(session)) {
                 expiredSessions.add(sessionId);
             }
         });
 
-        expiredSessions.forEach(this::CloseUserSession);
+        expiredSessions.forEach(this::closeUserSession);
         if (!expiredSessions.isEmpty()) {
             logger.info("Pulite {} sessioni scadute", expiredSessions.size());
         }

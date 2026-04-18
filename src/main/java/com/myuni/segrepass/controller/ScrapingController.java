@@ -4,7 +4,6 @@ import com.myuni.segrepass.dto.LoginResponseDto;
 import com.myuni.segrepass.dto.SummaryDto;
 import com.myuni.segrepass.service.SessionManager;
 import com.myuni.segrepass.service.UserSession;
-import jakarta.websocket.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
@@ -37,13 +36,11 @@ public class ScrapingController {
         }
 
         try {
-            // Crea driver e fa il login
             org.openqa.selenium.WebDriver driver = scraperService.setupDriver();
             driver.get("https://www.segrepass1.unina.it/Welcome.do");
             scraperService.login(driver, request.getUsername(), request.getPassword());
 
-            // Crea sessione
-            String sessionId = sessionManager.CreateSession(request.getUsername(), driver);
+            String sessionId = sessionManager.createSession(request.getUsername(), driver);
 
             logger.info("Login successful per: {}", request.getUsername());
             return new LoginResponseDto(sessionId, request.getUsername(), "Login successful");
@@ -54,9 +51,6 @@ public class ScrapingController {
         }
     }
 
-    /**
-     * Recupera esami usando la sessione attiva
-     */
     @PostMapping("/libretto")
     public List<ExamDto> getLibretto(@RequestHeader("X-Session-ID") String sessionId) {
         logger.info("Richiesta libretto ricevuta per sessione: {}", sessionId);
@@ -101,7 +95,7 @@ public class ScrapingController {
     @PostMapping("/logout")
     public Map<String, String> logout(@RequestHeader("X-Session-ID") String sessionId) {
         logger.info("Logout ricevuto per sessione: {}", sessionId);
-        sessionManager.CloseUserSession(sessionId);
+        sessionManager.closeUserSession(sessionId);
         return Map.of("message", "Logout successful");
     }
 
