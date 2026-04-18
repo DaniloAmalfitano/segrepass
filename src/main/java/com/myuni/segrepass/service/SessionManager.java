@@ -73,6 +73,27 @@ public class SessionManager {
         return session;
     }
 
+    /**
+     * Recupera la sessione per username (utile per JWT)
+     */
+    public UserSession getSessionByUsername(String username) {
+        for (Map.Entry<String, UserSession> entry : sessions.entrySet()) {
+            UserSession session = entry.getValue();
+            if (session.getUsername().equals(username)) {
+                if (!isSessionExpired(session)) {
+                    session.updateLastAccessed();
+                    return session;
+                } else {
+                    logger.info("Sessione scaduta per utente {}", username);
+                    closeUserSession(entry.getKey());
+                    return null;
+                }
+            }
+        }
+        logger.warn("Sessione non trovata per username: {}", username);
+        return null;
+    }
+
     public void closeUserSession(String sessionId) {
         UserSession session = sessions.remove(sessionId);
         if (session == null) {
