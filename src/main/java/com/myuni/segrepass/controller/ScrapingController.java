@@ -89,9 +89,6 @@ public class ScrapingController {
         }
     }
 
-    /**
-     * Logout - chiude la sessione
-     */
     @PostMapping("/logout")
     public Map<String, String> logout(@RequestHeader("X-Session-ID") String sessionId) {
         logger.info("Logout ricevuto per sessione: {}", sessionId);

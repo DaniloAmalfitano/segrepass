@@ -3,8 +3,6 @@ package com.myuni.segrepass.service;
 import lombok.Getter;
 import lombok.Setter;
 import org.openqa.selenium.WebDriver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 import java.time.LocalDateTime;
@@ -18,7 +16,6 @@ public class UserSession {
     private LocalDateTime createdAt;
     private LocalDateTime lastAccessedAt;
 
-    private static final Logger logger = LoggerFactory.getLogger(UserSession.class);
 
     public UserSession(String sessionId, String username, WebDriver webDriver, LocalDateTime createdAt, LocalDateTime lastAccessedAt) {
         this.sessionId = sessionId;
@@ -37,18 +34,5 @@ public class UserSession {
 
     public void updateLastAccessed() {
         this.lastAccessedAt = LocalDateTime.now();
-    }
-
-    public void closeDriver() {
-        if(webDriver != null) {
-            try{
-                webDriver.quit();
-                logger.info("Driver chiuso per sessione {}", sessionId);
-            }
-            catch(Exception e) {
-                throw new RuntimeException("Errore chiusura driver: ",e);
-            }
-        }
-
     }
 }

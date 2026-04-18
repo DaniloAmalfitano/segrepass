@@ -80,7 +80,6 @@ public class SessionManager {
             return;
         }
 
-        // Se una request sta usando la sessione, aspetta qui
         synchronized (session) {
             try {
                 if (session.getWebDriver() != null) {
