@@ -1,5 +1,6 @@
 package com.myuni.segrepass.service;
 
+import com.myuni.segrepass.dto.SummaryDto;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.By;
@@ -22,40 +23,37 @@ import java.util.List;
 @Service
 public class SegrepassScraperService {
     private static final Logger logger = LoggerFactory.getLogger(SegrepassScraperService.class);
-    private static final String SEGREPASS_URL = "https://www.segrepass1.unina.it/Welcome.do";
     private static final Duration WAIT_TIMEOUT = Duration.ofSeconds(15);
 
-    public List<ExamDto> fetchExams(String username, String password) {
-        WebDriver driver = null;
 
+    public List<ExamDto> fetchExams(WebDriver driver) {
         try {
-            driver = setupDriver();
-            logger.info("Driver avviato, navigazione a {}", SEGREPASS_URL);
-
-            driver.get(SEGREPASS_URL);
-            login(driver, username, password);
+            logger.info("Recupero esami con driver esistente");
             navigateToEsamiSostenuti(driver);
-
             List<ExamDto> exams = parseExams(driver);
             logger.info("Estratti {} esami", exams.size());
             return exams;
         } catch (Exception e) {
             logger.error("Errore durante scraping: {}", e.getMessage(), e);
             throw new RuntimeException("Scraping fallito: " + e.getMessage(), e);
-        } finally {
-            if (driver != null) {
-                try {
-                    driver.quit();
-                    logger.info("Driver chiuso");
-                } catch (Exception e) {
-                    logger.warn("Errore chiusura driver: {}", e.getMessage());
-                }
-            }
+        }
+    }
+
+    public SummaryDto fetchSummary(WebDriver driver) {
+        try {
+            logger.info("Recupero summary con driver esistente");
+            navigateToRiepilogoEsamiECrediti(driver);
+            SummaryDto summary = parseSummary(driver);
+            logger.info("Summary recuperato");
+            return summary;
+        } catch (Exception e) {
+            logger.error("Errore durante scraping: {}", e.getMessage(), e);
+            throw new RuntimeException("Scraping fallito: " + e.getMessage(), e);
         }
     }
 
 
-    private WebDriver setupDriver() {
+    public WebDriver setupDriver() {
         logger.info("Setup ChromeDriver");
 
         String chromeBin = System.getenv().getOrDefault("CHROME_BIN", "/usr/bin/chromium-browser");
@@ -74,26 +72,20 @@ public class SegrepassScraperService {
         return new ChromeDriver(options);
     }
 
-    private void login(WebDriver driver, String username, String password) {
+    public void login(WebDriver driver, String username, String password) {
         logger.info("Inizio login");
         WebDriverWait wait = new WebDriverWait(driver, WAIT_TIMEOUT);
 
         try {
-            WebElement usernameField = wait.until(
-                    ExpectedConditions.presenceOfElementLocated(By.name("codice_fiscale"))
-            );
+            WebElement usernameField = wait.until(ExpectedConditions.presenceOfElementLocated(By.name("codice_fiscale")));
             usernameField.clear();
             usernameField.sendKeys(username);
 
-            WebElement passwordField = wait.until(
-                    ExpectedConditions.presenceOfElementLocated(By.name("password"))
-            );
+            WebElement passwordField = wait.until(ExpectedConditions.presenceOfElementLocated(By.name("password")));
             passwordField.clear();
             passwordField.sendKeys(password);
 
-            WebElement loginButton = wait.until(
-                    ExpectedConditions.elementToBeClickable(By.id("cfSubmit"))
-            );
+            WebElement loginButton = wait.until(ExpectedConditions.elementToBeClickable(By.id("cfSubmit")));
             loginButton.click();
 
             wait.until(ExpectedConditions.presenceOfElementLocated(By.id("link_1")));
@@ -110,17 +102,11 @@ public class SegrepassScraperService {
         WebDriverWait wait = new WebDriverWait(driver, WAIT_TIMEOUT);
 
         try {
-            WebElement datiCarriera = wait.until(
-                    ExpectedConditions.elementToBeClickable(By.id("link_1"))
-            );
+            WebElement datiCarriera = wait.until(ExpectedConditions.elementToBeClickable(By.id("link_1")));
             datiCarriera.click();
             logger.info("Cliccato su Dati Carriera");
 
-            WebElement esamiSostenuti = wait.until(
-                    ExpectedConditions.elementToBeClickable(
-                            By.cssSelector("a[href*='azione=esamiSostenuti']")
-                    )
-            );
+            WebElement esamiSostenuti = wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("a[href*='azione=esamiSostenuti']")));
             esamiSostenuti.click();
             logger.info("Cliccato su Esami Sostenuti");
 
@@ -131,6 +117,30 @@ public class SegrepassScraperService {
             throw new RuntimeException("Navigazione a Esami Sostenuti fallita", e);
         }
     }
+
+public void navigateToRiepilogoEsamiECrediti(WebDriver driver) {
+    logger.info("Navigazione: Dati Carriera -> Riepilogo esami e crediti");
+    WebDriverWait wait = new WebDriverWait(driver, WAIT_TIMEOUT);
+
+    try {
+        WebElement datiCarriera = wait.until(
+                ExpectedConditions.elementToBeClickable(By.id("link_1")));
+        datiCarriera.click();
+
+        WebElement riepilogo = wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("a[href*='azione=riepilogoEsamiCrediti']")));
+        riepilogo.click();
+
+        WebElement calcola = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//input[@type='submit' and @name='buttonAction' and @value='Calcola']")));
+        calcola.click();
+
+        // Aspetta che la tabella del riepilogo sia caricata, cercando il primo elemento da parsare"
+        wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//td[contains(normalize-space(.), 'Crediti Maturati')]")));
+
+        logger.info("Riepilogo caricato");
+    } catch (Exception e) {
+        throw new RuntimeException("Navigazione a riepilogo esami e crediti fallita", e);
+    }
+}
 
 
     private List<ExamDto> parseExams(WebDriver driver) {
@@ -166,7 +176,68 @@ public class SegrepassScraperService {
         } catch (Exception e) {
             logger.error("Errore parsing tabella esami: {}", e.getMessage(), e);
         }
-
         return exams;
+    }
+    private SummaryDto parseSummary(WebDriver driver) {
+        SummaryDto summary = new SummaryDto();
+        logger.info("Parsing riepilogo esami e crediti");
+
+        try {
+            List<WebElement> rows = driver.findElements(By.cssSelector("table.tabella tbody tr"));
+            logger.info("Trovate {} righe nel riepilogo", rows.size());
+
+            for (WebElement row : rows) {
+                List<WebElement> cells = row.findElements(By.tagName("td"));
+                if (cells.size() < 2) {
+                    continue;
+                }
+
+
+                for (int i = 0; i + 1 < cells.size(); i += 2) {
+                    String label = cells.get(i).getText()
+                            .trim()
+                            .replace('\u00A0', ' ')
+                            .replaceAll("\\s+", " ")
+                            .toLowerCase();
+
+                    String value = cells.get(i + 1).getText()
+                            .trim()
+                            .replace('\u00A0', ' ')
+                            .replaceAll("\\s+", " ");
+
+                    if (label.isEmpty() || value.isEmpty()) {
+                        continue;
+                    }
+
+                    switch (label) {
+                        case "crediti maturati" -> summary.setCfuMatured(value);
+                        case "crediti mancanti" -> summary.setCfuMissing(value);
+                        case "crediti totali" -> summary.setCfuTotal(value);
+
+                        case "esami sostenuti" -> summary.setExamsTaken(value);
+                        case "esami in media" -> summary.setAverageExams(value);
+
+                        case "media ponderata su 30" -> summary.setWeightedAverage(value);
+                        case "media aritmetica su 30" -> summary.setArithmeticAverage(value);
+                        case "media ponderata su 110" -> summary.setWeightedAverageOn110(value);
+                        case "media aritmetica su 110" -> summary.setArithmeticAverageOn110(value);
+
+                        case "numero di lodi" -> summary.setNumberOfHonors(value);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Errore parsing riepilogo: {}", e.getMessage(), e);
+        }
+
+        return summary;
+    }
+
+    private int parseIntSafe(String value) {
+        try {
+            return Integer.parseInt(value.replaceAll("[^0-9]", "").trim());
+        } catch (Exception e) {
+            return 0;
+        }
     }
 }
